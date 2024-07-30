@@ -5,5 +5,8 @@
         <f:entry field="label" title="${%Label}">
             <f:textbox/>
         </f:entry>
+        <f:entry field="description" title="${%Description}">
+            <f:textarea/>
+        </f:entry>
     </f:section>
 </j:jelly>

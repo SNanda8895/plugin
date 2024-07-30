@@ -20,6 +20,17 @@ public class SampleConfiguration extends GlobalConfiguration {
     }
 
     private String label;
+    private String description;
+
+    public String getDescription() {
+        return description;
+    }
+
+   @DataBoundSetter
+    public void setDescription(String description) {
+        this.description = description;
+        save();
+    }
 
     public SampleConfiguration() {
         // When Jenkins is restarted, load any saved configuration from disk.
@@ -44,7 +55,16 @@ public class SampleConfiguration extends GlobalConfiguration {
     public FormValidation doCheckLabel(@QueryParameter String value) {
         if (StringUtils.isEmpty(value)) {
             return FormValidation.warning("Please specify a label.");
+        }else if (!value.matches("[a-zA-Z]")) {
+            return  FormValidation.error("Only lowercase and uppercase ans spaces are allowed");
         }
         return FormValidation.ok();
     }
+    public FormValidation doCheckDescription(@QueryParameter String value) {
+        if (StringUtils.isEmpty(value)) {
+            return FormValidation.warning("Please specify a description.");
+        }
+        return FormValidation.ok();
+    }
+
 }
