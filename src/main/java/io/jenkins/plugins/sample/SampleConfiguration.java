@@ -9,13 +9,21 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Base64;
+
 /**
  * Example of Jenkins global configuration.
  */
 @Extension
 public class SampleConfiguration extends GlobalConfiguration {
 
-    /** @return the singleton instance */
+    /**
+     * @return the singleton instance
+     */
     public static SampleConfiguration get() {
         return ExtensionList.lookupSingleton(SampleConfiguration.class);
     }
@@ -48,7 +56,6 @@ public class SampleConfiguration extends GlobalConfiguration {
     }
 
 
-
     public String getUserName() {
         return userName;
     }
@@ -58,7 +65,6 @@ public class SampleConfiguration extends GlobalConfiguration {
         this.userName = userName;
         save();
     }
-
 
 
     public String getUrl() {
@@ -75,7 +81,7 @@ public class SampleConfiguration extends GlobalConfiguration {
         return description;
     }
 
-   @DataBoundSetter
+    @DataBoundSetter
     public void setDescription(String description) {
         this.description = description;
         save();
@@ -86,13 +92,16 @@ public class SampleConfiguration extends GlobalConfiguration {
         load();
     }
 
-    /** @return the currently configured label, if any */
+    /**
+     * @return the currently configured label, if any
+     */
     public String getLabel() {
         return label;
     }
 
     /**
      * Together with {@link #getLabel}, binds to entry in {@code config.jelly}.
+     *
      * @param label the new value of this field
      */
     @DataBoundSetter
@@ -104,24 +113,53 @@ public class SampleConfiguration extends GlobalConfiguration {
     public FormValidation doCheckLabel(@QueryParameter String value) {
         if (StringUtils.isEmpty(value)) {
             return FormValidation.warning("Please specify a label.");
-        }if (!value.matches("[a-zA-Z ]+")) {
+        }
+        if (!value.matches("[a-zA-Z ]+")) {
             return FormValidation.warning("Name can only contain letters and spaces.");
         }
         return FormValidation.ok();
     }
+
     public FormValidation doCheckDescription(@QueryParameter String value) {
         if (StringUtils.isEmpty(value)) {
             return FormValidation.warning("Please specify a description.");
         }
         return FormValidation.ok();
     }
+
     public FormValidation doCheckUserName(@QueryParameter String value) {
-        if(StringUtils.isEmpty(value)) {
+        if (StringUtils.isEmpty(value)) {
             return FormValidation.warning("Please specify username");
-        } if (!value.matches("[a-zA-Z]+")) {
+        }
+        if (!value.matches("[a-zA-Z]+")) {
             return FormValidation.warning("UserName can only contain letters.");
         }
         return FormValidation.ok();
     }
 
+    public FormValidation doTestConnection(@QueryParameter("url") String url,
+                                           @QueryParameter("username") String username,
+                                           @QueryParameter("password") Secret password) throws MalformedURLException {
+
+        try {
+            URL obj = new URL(url);
+            HttpURLConnection connection =(HttpURLConnection) obj.openConnection();
+            connection.setRequestMethod("Get");
+            String auth = username + ":" + password.getPlainText();
+            String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
+            connection.setRequestProperty("Auth", "Basic" +encodedAuth);
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return  FormValidation.ok("Successful");
+            }
+            else  {
+                return FormValidation.error("Failed to connect " +responseCode);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Not able to connect" + e.getMessage());
+        }
+
+
+    }
 }
